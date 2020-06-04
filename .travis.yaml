@@ -1,0 +1,21 @@
+sudo: required
+services:
+  - docker # We need travis to build our images and run test container
+before_install:
+  # This command takes service-account.json.enc, decrypts it and places it in our root project directory
+  - openssl aes-256-cbc -K $encrypted_9f3b5599b056_key -iv $encrypted_9f3b5599b056_iv -in service-account.json.enc -out service-account.json -d
+  # download google cloud sdk and install it locally on instance assigned to us by travis
+  - curl https://sdk.cloud.google.com | bash > /dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  # Install and update kubectl inside travis environment. We need it to apply config files
+  - gcloud components update kubectl
+  # Authorization to google cloud.
+  - gcloud auth activate-service-account --key-file service-account.json
+  # Tell google cloud what project you want to work on
+  - gcloud config set project multi-k8s-278801
+  # Tell google cloud the zone
+  - gcloud config set compute/zone us-central1-c
+  # What cluster to work with if we issue any k8s commands
+  - gcloud container clusters get-credentials multi-cluster
+  # Login to docker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
